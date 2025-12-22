@@ -1,0 +1,65 @@
+Proyecto Final de Reconocimiento de Voz, ESCOM-IPN
+Sistema de Reconocimiento de Voz Básico sin uso de APIs externas
+1. Título del Proyecto
+“Implementación de un sistema de reconocimiento de voz desde cero mediante técnicas de procesamiento digital de señales y aprendizaje automático”
+2. Justificación
+El reconocimiento de voz es una de las aplicaciones más relevantes en la interacción humano-computadora. Actualmente, existen APIs muy robustas como Whisper de OpenAI, Google Speech-to-Text o Amazon Transcribe, pero su uso oculta la lógica interna del procesamiento y dificulta el aprendizaje académico de los fundamentos.
+Por ello, este proyecto busca implementar un sistema de reconocimiento de voz desde cero demostrando lo aprendido en clases utilizando herramientas libres y algoritmos básicos de procesamiento digital de señales y modelos estadísticos/clásicos de machine learning. Esto permitirá a los estudiantes comprender los pasos fundamentales del reconocimiento automático del habla (ASR, por sus siglas en inglés).
+3. Objetivo General
+Diseñar e implementar un sistema básico de reconocimiento de voz que convierta fragmentos de audio en texto, utilizando técnicas propias de procesamiento de señales y modelos de clasificación, sin emplear APIs de terceros.
+4. Objetivos Específicos
+•	Preprocesar señales de audio eliminando ruido y normalizando amplitud.
+•	Implementar extracción de características acústicas como MFCCs (Mel-Frequency Cepstral Coefficients) o espectrogramas log-mel.
+•	Entrenar un modelo de reconocimiento usando algoritmos clásicos (HMM, GMM, SVM o redes neuronales simples).
+•	Implementar un módulo de evaluación para medir precisión de reconocimiento frente a un corpus de prueba.
+•	Documentar la arquitectura y resultados para fines académicos. El documento debe contener las siguientes secciones:
+o	Portada
+o	Índice
+o	Introducción
+o	Estado del arte
+o	Desarrollo
+o	Conclusiones
+o	Referencias
+5. Alcance
+•	Reconocimiento limitado a un vocabulario reducido (10–20 palabras o frases).
+•	Entrenamiento con un conjunto de audios recolectados por los estudiantes o mediante corpus libres (ej. TIMIT, LibriSpeech reducido).
+•	No se implementará un modelo de lenguaje complejo ni un sistema de reconocimiento a gran escala.
+•	El sistema deberá funcionar en PC sin depender de servicios en la nube ni APIs comerciales.
+6. Metodología
+1.	Recolección de datos
+o	Captura de muestras de voz de los integrantes del equipo o uso de un corpus reducido de acceso libre.
+2.	Preprocesamiento
+o	Conversión a mono y 16 kHz.
+o	Eliminación de ruido con filtros digitales (ej. filtro de Wiener o reducción espectral).
+o	Normalización de amplitud.
+3.	Extracción de características
+o	Implementación de MFCCs usando librerías científicas (NumPy, SciPy, librosa, etc).
+o	Representación de cada señal de audio como un vector de características.
+4.	Modelado y entrenamiento
+o	Implementación de un modelo clásico de reconocimiento:
+	HMM/GMM (ocupa algoritmos de probabilidad secuencial).
+	Alternativamente, una red neuronal feedforward o RNN básica entrenada en PyTorch/TensorFlow, sin uso de APIs preentrenadas.
+5.	Reconocimiento
+o	Módulo que recibe un audio desconocido, extrae características y predice la palabra/frase más probable.
+6.	Evaluación
+o	Métricas: tasa de aciertos (accuracy), tasa de error de palabra (WER).
+o	Comparación con distintos modelos entrenados.
+________________________________________
+7. Herramientas
+•	Python, C++.
+•	Librerías de propósito general: NumPy, SciPy, librosa, PyTorch/TensorFlow.
+•	Corpus libres para pruebas.
+
+No Permitido
+•	Uso de APIs externas de reconocimiento de voz (Whisper, Google Speech-to-Text, Amazon Transcribe, etc.).
+•	Uso de modelos preentrenados cerrados.
+8. Resultados Esperados
+•	Prototipo funcional capaz de reconocer un conjunto limitado de palabras/frases.
+•	Análisis comparativo entre distintos métodos de modelado.
+•	Documento técnico con fundamentos teóricos, diseño, pruebas y conclusiones.
+•	Presentación en PowerPoint o similar (Opcional)
+9. Impacto Académico
+Este proyecto permitirá a los estudiantes:
+•	Comprender a fondo el flujo de un sistema de reconocimiento de voz.
+•	Poner en práctica conocimientos de matemáticas, estadística, programación y machine learning.
+•	Prepararse para proyectos más complejos en el área de inteligencia artificial y procesamiento del lenguaje natural.
