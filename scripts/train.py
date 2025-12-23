@@ -11,14 +11,22 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.config import (
-    PROCESSED_DATA_DIR, MODELS_DIR, RESULTS_DIR, VOCABULARY,
+    PROCESSED_DATA_DIR, DATASET_PATH, MODELS_DIR, RESULTS_DIR, VOCABULARY,
     MAX_SAMPLES_PER_WORD, FEATURES_DIR
 )
 from src.utils.data_loader import (
     load_dataset, extract_features_from_dataset, split_dataset,
     save_features, get_class_distribution
 )
-from src.models.hmm_model import HMMClassifier
+
+# HMM es opcional (requiere hmmlearn)
+HMM_AVAILABLE = False
+try:
+    from src.models.hmm_model import HMMClassifier
+    HMM_AVAILABLE = True
+except ImportError:
+    print("Nota: hmmlearn no disponible, se omitirá el modelo HMM")
+
 from src.models.classifier import (
     train_svm, train_random_forest, train_mlp, evaluate_classifiers, save_model
 )
@@ -89,16 +97,20 @@ def train_classic_models(X_train, y_train, X_val, y_val, verbose=True):
     if verbose:
         print(f"  Accuracy: {rf_metrics['accuracy']:.4f}")
 
-    # MLP
-    if verbose:
-        print("\nEntrenando MLP...")
-    mlp = train_mlp(X_train_agg, y_train)
-    mlp_pred = mlp.predict(X_val_agg)
-    mlp_metrics = calculate_metrics(y_val, mlp_pred)
-    models['mlp'] = mlp
-    results['MLP'] = mlp_metrics
-    if verbose:
-        print(f"  Accuracy: {mlp_metrics['accuracy']:.4f}")
+    # MLP (puede fallar por incompatibilidad con numpy)
+    try:
+        if verbose:
+            print("\nEntrenando MLP...")
+        mlp = train_mlp(X_train_agg, y_train)
+        mlp_pred = mlp.predict(X_val_agg)
+        mlp_metrics = calculate_metrics(y_val, mlp_pred)
+        models['mlp'] = mlp
+        results['MLP'] = mlp_metrics
+        if verbose:
+            print(f"  Accuracy: {mlp_metrics['accuracy']:.4f}")
+    except Exception as e:
+        if verbose:
+            print(f"  MLP omitido por error: {e}")
 
     return models, results
 
@@ -121,7 +133,7 @@ def main():
     # Cargar datos
     print("\n[1/4] Cargando dataset...")
     audios, labels, paths = load_dataset(
-        data_dir=PROCESSED_DATA_DIR,
+        data_dir=DATASET_PATH,
         vocabulary=VOCABULARY,
         max_samples_per_word=args.max_samples,
         verbose=True
@@ -171,11 +183,13 @@ def main():
     print("\n[4/4] Entrenando modelos...")
     all_results = {}
 
-    if args.model in ['hmm', 'all']:
+    if args.model in ['hmm', 'all'] and HMM_AVAILABLE:
         hmm_model, hmm_metrics = train_hmm_model(X_train, y_train, X_val, y_val)
         hmm_model.save(str(MODELS_DIR / "hmm_model.pkl"))
         all_results['HMM-GMM'] = hmm_metrics
         print(f"Modelo HMM guardado en: {MODELS_DIR / 'hmm_model.pkl'}")
+    elif args.model == 'hmm' and not HMM_AVAILABLE:
+        print("ERROR: hmmlearn no está instalado. Instálalo con: pip install hmmlearn")
 
     if args.model in ['svm', 'rf', 'mlp', 'all']:
         classic_models, classic_results = train_classic_models(
