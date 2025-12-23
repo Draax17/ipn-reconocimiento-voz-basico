@@ -12,11 +12,11 @@ import pickle
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from src.config import (
-    PROCESSED_DATA_DIR, FEATURES_DIR, VOCABULARY,
+    PROCESSED_DATA_DIR, DATASET_PATH, FEATURES_DIR, VOCABULARY,
     TRAIN_SPLIT, VAL_SPLIT, TEST_SPLIT, RANDOM_SEED, MAX_SAMPLES_PER_WORD,
     SAMPLE_RATE
 )
-from src.preprocessing.audio_converter import load_audio
+import librosa
 from src.preprocessing.normalizer import preprocess_audio
 from src.preprocessing.vad import trim_silence
 from src.features.mfcc_extractor import extract_mfcc_with_deltas, aggregate_features
@@ -24,7 +24,7 @@ from src.features.feature_normalizer import FeatureNormalizer
 
 
 def load_dataset(
-    data_dir: Path = PROCESSED_DATA_DIR,
+    data_dir: Path = None,
     vocabulary: List[str] = VOCABULARY,
     max_samples_per_word: Optional[int] = MAX_SAMPLES_PER_WORD,
     preprocess: bool = True,
@@ -32,10 +32,10 @@ def load_dataset(
     verbose: bool = True
 ) -> Tuple[List[np.ndarray], List[str], List[str]]:
     """
-    Carga el dataset de archivos de audio.
+    Carga el dataset de archivos de audio (.opus o .wav).
 
     Args:
-        data_dir: Directorio con los audios procesados
+        data_dir: Directorio con los audios (usa DATASET_PATH por defecto)
         vocabulary: Lista de palabras a cargar
         max_samples_per_word: Máximo de muestras por palabra
         preprocess: Aplicar preprocesamiento
@@ -45,6 +45,9 @@ def load_dataset(
     Returns:
         Tuple (audios, etiquetas, rutas_archivos)
     """
+    if data_dir is None:
+        data_dir = DATASET_PATH
+
     audios = []
     labels = []
     file_paths = []
@@ -56,30 +59,36 @@ def load_dataset(
                 print(f"Advertencia: No se encontró carpeta para '{word}'")
             continue
 
-        wav_files = list(word_dir.glob("*.wav"))
+        # Buscar archivos .opus o .wav
+        audio_files = list(word_dir.glob("*.opus")) + list(word_dir.glob("*.wav"))
         if max_samples_per_word:
-            wav_files = wav_files[:max_samples_per_word]
+            audio_files = audio_files[:max_samples_per_word]
 
         if verbose:
-            print(f"Cargando {len(wav_files)} archivos de '{word}'...")
+            print(f"Cargando {len(audio_files)} archivos de '{word}'...")
 
-        for wav_file in wav_files:
-            audio, sr = load_audio(str(wav_file))
-            if audio is None:
+        for audio_file in audio_files:
+            try:
+                audio, sr = librosa.load(str(audio_file), sr=SAMPLE_RATE)
+                if audio is None or len(audio) == 0:
+                    continue
+
+                if preprocess:
+                    audio = preprocess_audio(audio)
+
+                if trim:
+                    audio = trim_silence(audio, sr)
+
+                if len(audio) < sr * 0.1:  # Mínimo 100ms
+                    continue
+
+                audios.append(audio)
+                labels.append(word)
+                file_paths.append(str(audio_file))
+            except Exception as e:
+                if verbose:
+                    print(f"  Error cargando {audio_file.name}: {e}")
                 continue
-
-            if preprocess:
-                audio = preprocess_audio(audio)
-
-            if trim:
-                audio = trim_silence(audio, sr)
-
-            if len(audio) < sr * 0.1:  # Mínimo 100ms
-                continue
-
-            audios.append(audio)
-            labels.append(word)
-            file_paths.append(str(wav_file))
 
     if verbose:
         print(f"Dataset cargado: {len(audios)} muestras")
