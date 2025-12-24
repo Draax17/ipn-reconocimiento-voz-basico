@@ -14,7 +14,7 @@ MODELS_DIR = PROJECT_ROOT / "models"
 RESULTS_DIR = PROJECT_ROOT / "results"
 
 # Dataset original
-DATASET_PATH = PROJECT_ROOT / "dataset_filtrado" / "dataset_filtrado"
+DATASET_PATH = Path("ruta_al_dataset\\dataset_filtrado")
 
 # Parámetros de audio
 SAMPLE_RATE = 16000  # Hz

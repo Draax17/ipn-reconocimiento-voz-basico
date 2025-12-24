@@ -4,6 +4,7 @@ scipy>=1.7.0
 librosa>=0.9.0
 soundfile>=0.10.0
 pydub>=0.25.0
+sounddevice>=0.4.4
 
 # Machine Learning
 scikit-learn>=1.0.0

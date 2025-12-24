@@ -69,6 +69,13 @@ def run_predict(audio_path, model='svm'):
     predict_main()
 
 
+def run_real_time(model='svm'):
+    """Ejecuta el reconocimiento en tiempo real."""
+    from scripts.voice_real_time import main as realtime_main
+    sys.argv = ['voice_real_time.py', '--model', model]
+    realtime_main()
+
+
 def run_full_pipeline():
     """Ejecuta el pipeline completo."""
     print("=" * 70)
@@ -146,7 +153,8 @@ def interactive_menu():
         print("3. Entrenar modelos")
         print("4. Evaluar modelos")
         print("5. Evaluar audios propios (data/evaluar)")
-        print("6. Ver configuración")
+        print("6. Reconocimiento en tiempo real")
+        print("7. Ver configuración")
         print("0. Salir")
 
         choice = input("\nSelecciona una opción: ").strip()
@@ -170,6 +178,9 @@ def interactive_menu():
                 model = input("Modelo (svm/rf/mlp) [svm]: ").strip() or 'svm'
                 run_predict(str(eval_folder), model)
         elif choice == '6':
+            model = input("Modelo a utilizar (svm/rf/mlp) [svm]: ").strip() or 'svm'
+            run_real_time(model)
+        elif choice == '7':
             print("\n--- CONFIGURACIÓN ---")
             print(f"Dataset: {DATASET_PATH}")
             print(f"Datos procesados: {PROCESSED_DATA_DIR}")
