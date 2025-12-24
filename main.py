@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.config import (
     DATASET_PATH, PROCESSED_DATA_DIR, MODELS_DIR, RESULTS_DIR,
-    VOCABULARY, MAX_SAMPLES_PER_WORD
+    VOCABULARY, MAX_SAMPLES_PER_WORD, DATA_DIR
 )
 
 
@@ -145,7 +145,7 @@ def interactive_menu():
         print("2. Preparar datos (convertir audios)")
         print("3. Entrenar modelos")
         print("4. Evaluar modelos")
-        print("5. Predecir audio")
+        print("5. Evaluar audios propios (data/evaluar)")
         print("6. Ver configuración")
         print("0. Salir")
 
@@ -162,10 +162,13 @@ def interactive_menu():
             model = input("Modelo (hmm/svm/rf/mlp/all) [all]: ").strip() or 'all'
             run_evaluate(model)
         elif choice == '5':
-            audio = input("Ruta al archivo de audio: ").strip()
-            if audio:
-                model = input("Modelo (hmm/svm/rf/mlp) [svm]: ").strip() or 'svm'
-                run_predict(audio, model)
+            eval_folder = DATA_DIR / "evaluar"
+            if not eval_folder.exists():
+                print(f"\nNo existe la carpeta: {eval_folder}")
+                print("Crea la carpeta y agrega archivos .wav con el nombre de la palabra esperada.")
+            else:
+                model = input("Modelo (svm/rf/mlp) [svm]: ").strip() or 'svm'
+                run_predict(str(eval_folder), model)
         elif choice == '6':
             print("\n--- CONFIGURACIÓN ---")
             print(f"Dataset: {DATASET_PATH}")

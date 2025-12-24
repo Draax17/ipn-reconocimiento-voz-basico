@@ -156,20 +156,65 @@ class VoiceRecognizer:
             return [(prediction, 1.0)]
 
 
+def extract_expected_word(filename: str) -> str:
+    """Extrae la palabra esperada del nombre del archivo (ej: 'Agua1.wav' -> 'agua')."""
+    import re
+    name = Path(filename).stem  # Sin extensión
+    # Quitar números del final
+    word = re.sub(r'\d+$', '', name)
+    return word.lower()
+
+
+def evaluate_folder(folder_path: Path, recognizer: VoiceRecognizer):
+    """Evalúa todos los audios en una carpeta automáticamente."""
+    audio_files = list(folder_path.glob("*.wav")) + list(folder_path.glob("*.mp3"))
+
+    if not audio_files:
+        print(f"No se encontraron archivos de audio en: {folder_path}")
+        return
+
+    print(f"\nEvaluando {len(audio_files)} archivos...\n")
+    print(f"{'Archivo':<20} {'Esperado':<12} {'Predicción':<12} {'Resultado'}")
+    print("-" * 60)
+
+    correct = 0
+    total = 0
+
+    for audio_file in sorted(audio_files):
+        expected = extract_expected_word(audio_file.name)
+        predicted, confidence = recognizer.predict(str(audio_file))
+
+        if predicted:
+            predicted = predicted.lower()
+            is_correct = expected == predicted
+            if is_correct:
+                correct += 1
+            total += 1
+
+            status = "✓" if is_correct else "✗"
+            print(f"{audio_file.name:<20} {expected:<12} {predicted:<12} {status}")
+        else:
+            total += 1
+            print(f"{audio_file.name:<20} {expected:<12} {'(error)':<12} ✗")
+
+    print("-" * 60)
+    accuracy = (correct / total * 100) if total > 0 else 0
+    print(f"\nResultados: {correct}/{total} correctos ({accuracy:.1f}%)")
+
+
 def main():
     parser = argparse.ArgumentParser(description='Predecir palabra en audio')
-    parser.add_argument('audio', type=str, help='Ruta al archivo de audio')
+    parser.add_argument('audio', type=str, help='Ruta al archivo de audio o carpeta')
     parser.add_argument('--model', type=str, default='svm',
                        choices=['hmm', 'svm', 'rf', 'mlp'],
                        help='Tipo de modelo a usar')
-    parser.add_argument('--top-k', type=int, default=3,
+    parser.add_argument('--top-k', type=int, default=1,
                        help='Mostrar top-k predicciones')
     args = parser.parse_args()
 
-    # Verificar que existe el archivo
     audio_path = Path(args.audio)
     if not audio_path.exists():
-        print(f"ERROR: No se encontró el archivo: {audio_path}")
+        print(f"ERROR: No se encontró: {audio_path}")
         sys.exit(1)
 
     print("=" * 60)
@@ -187,21 +232,25 @@ def main():
         print("Ejecuta primero: python scripts/train.py")
         sys.exit(1)
 
-    # Predecir
-    print(f"\nAnalizando: {audio_path}")
-    print("-" * 40)
-
-    if args.top_k > 1:
-        predictions = recognizer.predict_top_k(str(audio_path), k=args.top_k)
-        print(f"\nTop-{args.top_k} Predicciones:")
-        for i, (word, confidence) in enumerate(predictions, 1):
-            print(f"  {i}. {word}")
+    # Si es carpeta, evaluar todos los archivos
+    if audio_path.is_dir():
+        evaluate_folder(audio_path, recognizer)
     else:
-        word, confidence = recognizer.predict(str(audio_path))
-        if word:
-            print(f"\nPalabra detectada: {word}")
+        # Predecir archivo individual
+        print(f"\nAnalizando: {audio_path}")
+        print("-" * 40)
+
+        if args.top_k > 1:
+            predictions = recognizer.predict_top_k(str(audio_path), k=args.top_k)
+            print(f"\nTop-{args.top_k} Predicciones:")
+            for i, (word, confidence) in enumerate(predictions, 1):
+                print(f"  {i}. {word}")
         else:
-            print("\nNo se pudo detectar ninguna palabra.")
+            word, confidence = recognizer.predict(str(audio_path))
+            if word:
+                print(f"\nPalabra detectada: {word}")
+            else:
+                print("\nNo se pudo detectar ninguna palabra.")
 
     print()
 
