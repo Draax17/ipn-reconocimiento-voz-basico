@@ -1,6 +1,9 @@
 # Carpeta de referencia (no parte del proyecto)
 Deteccion de Vocales/
 dataset_filtrado/
+data/processed/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -12,8 +12,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.config import PROCESSED_DATA_DIR, MODELS_DIR, RESULTS_DIR, VOCABULARY
 from src.utils.data_loader import load_dataset, extract_features_from_dataset, split_dataset
-from src.models.hmm_model import HMMClassifier
 from src.models.classifier import load_model
+
+# HMM es opcional (requiere hmmlearn)
+HMM_AVAILABLE = False
+try:
+    from src.models.hmm_model import HMMClassifier
+    HMM_AVAILABLE = True
+except ImportError:
+    print("Nota: hmmlearn no disponible, se omitirá el modelo HMM")
+    HMMClassifier = None
 from src.features.mfcc_extractor import aggregate_features
 from src.evaluation.metrics import (
     calculate_metrics, generate_evaluation_report, get_confusion_matrix,
@@ -113,17 +121,23 @@ def main():
 
     # HMM
     if args.model in ['hmm', 'all']:
-        hmm_path = MODELS_DIR / "hmm_model.pkl"
-        if hmm_path.exists():
-            hmm = HMMClassifier()
-            hmm.load(str(hmm_path))
-            metrics, _ = evaluate_model(
-                hmm, X_test, y_test, "HMM-GMM",
-                is_hmm=True, save_dir=save_dir
-            )
-            results['HMM-GMM'] = metrics
+        if not HMM_AVAILABLE:
+            print("\nAdvertencia: hmmlearn no está instalado. No se puede evaluar el modelo HMM.")
+            print("Para instalar hmmlearn, ejecuta: pip install hmmlearn")
+            print("Nota: En Windows, puede requerir Microsoft Visual C++ Build Tools.")
+            print("      Descarga desde: https://visualstudio.microsoft.com/visual-cpp-build-tools/")
         else:
-            print(f"\nAdvertencia: No se encontró modelo HMM en {hmm_path}")
+            hmm_path = MODELS_DIR / "hmm_model.pkl"
+            if hmm_path.exists():
+                hmm = HMMClassifier()
+                hmm.load(str(hmm_path))
+                metrics, _ = evaluate_model(
+                    hmm, X_test, y_test, "HMM-GMM",
+                    is_hmm=True, save_dir=save_dir
+                )
+                results['HMM-GMM'] = metrics
+            else:
+                print(f"\nAdvertencia: No se encontró modelo HMM en {hmm_path}")
 
     # Modelos clásicos
     classic_models = {'svm': 'SVM', 'rf': 'Random Forest', 'mlp': 'MLP'}

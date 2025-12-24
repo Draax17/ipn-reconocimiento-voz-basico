@@ -5,7 +5,10 @@
       "Bash(pip install:*)",
       "Bash(ffmpeg:*)",
       "Bash(python:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(where:*)",
+      "Bash(powershell:*)",
+      "Bash(\"C:\\\\Users\\\\Gael\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-8.0.1-full_build\\\\bin\\\\ffmpeg.exe\" -i \"C:\\\\Users\\\\Gael\\\\OneDrive - Instituto Politecnico Nacional\\\\ESCOM\\\\septimo_Semestre\\\\Reconocimiento de Voz\\\\ipn-reconocimiento-voz-basico\\\\dataset_filtrado\\\\dataset_filtrado\\\\vida\\\\common_voice_es_18307255.opus\" -ar 16000 -ac 1 -y test_output.wav)"
     ]
   }
 }

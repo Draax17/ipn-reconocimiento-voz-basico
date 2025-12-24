@@ -12,11 +12,9 @@ from tqdm import tqdm
 import numpy as np
 import soundfile as sf
 
-try:
-    from pydub import AudioSegment
-    PYDUB_AVAILABLE = True
-except ImportError:
-    PYDUB_AVAILABLE = False
+# Configurar la ruta de ffmpeg para Windows (winget install)
+FFMPEG_PATH = Path.home() / "AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.0.1-full_build/bin"
+FFMPEG_EXE = FFMPEG_PATH / "ffmpeg.exe" if FFMPEG_PATH.exists() else "ffmpeg"
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -30,7 +28,7 @@ def convert_opus_to_wav(
     channels: int = AUDIO_CHANNELS
 ) -> bool:
     """
-    Convierte un archivo .opus a .wav.
+    Convierte un archivo .opus a .wav usando ffmpeg directamente.
 
     Args:
         input_path: Ruta al archivo .opus
@@ -42,26 +40,33 @@ def convert_opus_to_wav(
         True si la conversión fue exitosa, False en caso contrario
     """
     try:
-        if PYDUB_AVAILABLE:
-            # Usar pydub (requiere ffmpeg instalado)
-            audio = AudioSegment.from_file(input_path, format="opus")
-            audio = audio.set_frame_rate(target_sr)
-            audio = audio.set_channels(channels)
-            audio.export(output_path, format="wav")
+        # Resolver rutas a rutas absolutas
+        input_file = Path(input_path).resolve()
+        output_file = Path(output_path).resolve()
+
+        # Verificar que el archivo de entrada exista
+        if not input_file.exists():
+            return False
+
+        # Asegurarse de que el directorio de salida exista
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Si el archivo de salida ya existe, omitir
+        if output_file.exists():
             return True
-        else:
-            # Fallback: usar ffmpeg directamente
-            cmd = [
-                "ffmpeg", "-y", "-i", input_path,
-                "-ar", str(target_sr),
-                "-ac", str(channels),
-                "-acodec", "pcm_s16le",
-                output_path
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            return result.returncode == 0
+
+        # Usar ffmpeg directamente (sin especificar formato de entrada)
+        cmd = [
+            str(FFMPEG_EXE), "-y", "-i", str(input_file),
+            "-ar", str(target_sr),
+            "-ac", str(channels),
+            "-acodec", "pcm_s16le",
+            "-loglevel", "error",
+            str(output_file)
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        return result.returncode == 0
     except Exception as e:
-        print(f"Error convirtiendo {input_path}: {e}")
         return False
 
 
@@ -100,15 +105,17 @@ def convert_dataset(
 
         word_output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Obtener archivos .opus
-        opus_files = list(word_input_dir.glob("*.opus"))
+        # Obtener archivos .opus y verificar que existan
+        opus_files = [f for f in word_input_dir.glob("*.opus") if f.exists() and f.is_file()]
 
         if max_samples:
             opus_files = opus_files[:max_samples]
 
         for opus_file in opus_files:
             wav_file = word_output_dir / opus_file.name.replace(".opus", ".wav")
-            tasks.append((str(opus_file), str(wav_file), word))
+            # Solo agregar si el archivo de entrada realmente existe
+            if opus_file.exists():
+                tasks.append((str(opus_file.resolve()), str(wav_file.resolve()), word))
 
     stats["total"] = len(tasks)
     print(f"Convirtiendo {len(tasks)} archivos de audio...")
